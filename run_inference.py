@@ -6,7 +6,6 @@ import cv2
 from facechain.utils import snapshot_download
 from facechain.constants import neg_prompt, pos_prompt_with_cloth, pos_prompt_with_style, base_models
 
-
 def generate_pos_prompt(style_model, prompt_cloth):
     if style_model is not None:
         matched = list(filter(lambda style: style_model == style['name'], styles))
@@ -36,13 +35,15 @@ for base_model in base_models:
     base_model['style_list'] = style_in_base
 
 use_pose_model = False
-input_img_path = 'poses/man/pose2.png'
-pose_image = 'poses/man/pose1.png'
-num_generate = 5
+input_img_path = f'{os.getcwd()}/poses/woman/pose13.jpg'
+print(f'input_img_path==={input_img_path}')
+pose_image = f'{os.getcwd()}/poses/woman/pose10.jpg'
+print(f'目录==={pose_image}')
+num_generate = 3
 multiplier_style = 0.25
 output_dir = './generated'
-base_model_idx = 0
-style_idx = 0
+base_model_idx = 1
+style_idx = 46
 
 base_model = base_models[base_model_idx]
 style = styles[style_idx]
@@ -63,8 +64,7 @@ if not use_pose_model:
     pose_image = None
 
 gen_portrait = GenPortrait()
-
-outputs = gen_portrait(num_generate, base_model_idx, style_model_path, pos_prompt, neg_prompt, input_img_path, pose_image, multiplier_style)
+outputs = gen_portrait(0, num_generate, base_model_idx, style_model_path, pos_prompt, neg_prompt, input_img_path, pose_image, multiplier_style)
 
 os.makedirs(output_dir, exist_ok=True)
 
