@@ -6,8 +6,8 @@ from facechain.inference_inpaint_fact import GenPortrait_inpaint
 num_faces = 1
 selected_face = 1
 strength = 0.6
-inpaint_img = 'poses/man/pose1.png'
-input_img_path = 'poses/man/pose2.png'
+inpaint_img = 'poses/woman/pose15.jpg' # 身体和背景
+input_img_path = 'poses/woman/pose13.jpg' # 脸
 num_generate = 1
 output_dir = './generated_inpaint'
 
@@ -18,7 +18,7 @@ output_img_size = 512
 
 gen_portrait = GenPortrait_inpaint()
 
-outputs = gen_portrait(inpaint_img, strength, output_img_size, num_faces, selected_face, pos_prompt, neg_prompt, input_img_path, num_generate)
+outputs = gen_portrait(1, inpaint_img, strength, output_img_size, num_faces, selected_face, pos_prompt, neg_prompt, input_img_path, num_generate)
 os.makedirs(output_dir, exist_ok=True)
 
 for i, out_tmp in enumerate(outputs):
