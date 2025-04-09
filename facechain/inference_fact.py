@@ -393,7 +393,9 @@ class GenPortrait:
             self.depth_control_weight = 0.0
 
         self.out_img_size = 512
-        print(f'此处111==={input_img_path}')
+        print(f'此处111, input_img_path==={input_img_path}')
+        print(f'此处111, pose_image==={pose_image}')
+
         input_img = Image.open(input_img_path).convert('RGB')
         w, h = input_img.size
         if max(w, h) > 1000:
