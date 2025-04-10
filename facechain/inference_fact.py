@@ -22,6 +22,7 @@ from modelscope.utils.constant import Tasks
 
 from face_adapter import FaceAdapter_v1, Face_Extracter_v1
 
+from model_path import local_model_path
 
 def txt2img(pipe, face_image, pos_prompt, neg_prompt, num_images=10):
     batch_size = 1
@@ -233,7 +234,6 @@ def face_swap_fn(use_face_swap, gen_results, template_face, image_face_fusion):
             ret_results.append(cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR))
         return ret_results
 
-
 def post_process_fn(use_post_process, swap_results_ori, selected_face,
                     num_gen_images):
     if use_post_process:
@@ -241,12 +241,11 @@ def post_process_fn(use_post_process, swap_results_ori, selected_face,
         #  TODO
         face_recognition_func = pipeline(
             Tasks.face_recognition,
-            'damo/cv_ir_face-recognition-ood_rts',
+            snapshot_download('damo/cv_ir_face-recognition-ood_rts', revision='v2.5', cache_dir=local_model_path),
             model_revision='v2.5')
         face_det_func = pipeline(
-            task=Tasks.face_detection,
-            model='damo/cv_ddsar_face-detection_iclr23-damofd',
-            model_revision='v1.1')
+            Tasks.face_detection,
+            snapshot_download('damo/cv_ddsar_face-detection_iclr23-damofd', revision='v1.1', cache_dir=local_model_path))
         swap_results = []
         for img in swap_results_ori:
             result_det = face_det_func(img)
@@ -283,55 +282,62 @@ class GenPortrait:
         pose_model_id = 'damo/face_chain_control_model'
         pose_revision = 'v1.0.1'
         pose_file = 'model_controlnet/control_v11p_sd15_openpose'
+
         pose_model_path = os.path.join(
-            snapshot_download(pose_model_id, revision=pose_revision),
+            snapshot_download(pose_model_id, revision=pose_revision, cache_dir=local_model_path),
             pose_file)
         
         self.controlnet = ControlNetModel.from_pretrained(pose_model_path, torch_dtype=torch.float16)
 
         self.segmentation_pipeline = pipeline(
             Tasks.image_segmentation,
-            'damo/cv_resnet101_image-multiple-human-parsing',
+            snapshot_download(model_id='damo/cv_resnet101_image-multiple-human-parsing', revision='v1.0.1', cache_dir=local_model_path),
             model_revision='v1.0.1')
 
         self.image_face_fusion = pipeline('face_fusion_torch',
-                                     model='damo/cv_unet_face_fusion_torch', model_revision='v1.0.3')
+                                     snapshot_download(model_id='damo/cv_unet_face_fusion_torch', revision='v1.0.3', cache_dir=local_model_path),
+                                    model_revision='v1.0.3')
 
         model_dir = snapshot_download(
-            'damo/face_chain_control_model', revision='v1.0.1')
+            'damo/face_chain_control_model', revision='v1.0.1', cache_dir=local_model_path)
         self.openpose = OpenposeDetector.from_pretrained(
             os.path.join(model_dir, 'model_controlnet/ControlNet')).to('cuda')
 
         self.face_quality_func = pipeline(
             Tasks.face_quality_assessment,
-            'damo/cv_manual_face-quality-assessment_fqa',
+            snapshot_download(model_id='damo/cv_manual_face-quality-assessment_fqa', revision='v2.0', cache_dir=local_model_path),
             model_revision='v2.0')
 
         model_dir = snapshot_download(
-            'ly261666/cv_wanx_style_model', revision='v1.0.2')
+            'ly261666/cv_wanx_style_model', revision='v1.0.2', cache_dir=local_model_path)
         
-        fr_weight_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0')
+        fr_weight_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0', cache_dir=local_model_path)
         fr_weight_path = os.path.join(fr_weight_path, 'ms1mv2_model_TransFace_S.pt')
         
-        fact_model_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0')
+        fact_model_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0', cache_dir=local_model_path)
         self.face_adapter_path_maj = os.path.join(fact_model_path, 'adapter_maj_mask_large_new_reg001_faceshuffle_00290001.ckpt')
         self.face_adapter_path_film = os.path.join(fact_model_path, 'adapter_film_mask_large_new_reg001_faceshuffle_00290001.ckpt')
         
         self.face_extracter_maj = Face_Extracter_v1(fr_weight_path=fr_weight_path, fc_weight_path=self.face_adapter_path_maj)
         self.face_extracter_film = Face_Extracter_v1(fr_weight_path=fr_weight_path, fc_weight_path=self.face_adapter_path_film)
-        
-        self.face_detection = pipeline(task=Tasks.face_detection, model='damo/cv_resnet50_face-detection_retinaface')
+        # print("执行到这里了*01")
+
+
+        self.face_detection = pipeline(Tasks.face_detection,
+            snapshot_download('damo/cv_resnet50_face-detection_retinaface', cache_dir=local_model_path))
+
         self.skin_retouching = pipeline(
             'skin-retouching-torch',
-            model='damo/cv_unet_skin_retouching_torch',
+            model=snapshot_download('damo/cv_unet_skin_retouching_torch', revision='v1.0.1', cache_dir=local_model_path),
             model_revision='v1.0.1')
+        # print("执行到这里了*02")
         self.fair_face_attribute_func = pipeline(Tasks.face_attribute_recognition,
-            snapshot_download('damo/cv_resnet34_face-attribute-recognition_fairface', revision='v2.0.2'))
+            snapshot_download('damo/cv_resnet34_face-attribute-recognition_fairface', revision='v2.0.2', cache_dir=local_model_path))
         
-        base_model_path_maj = snapshot_download('MAILAND/majicmixRealistic_v6', revision='v1.0.0')
+        base_model_path_maj = snapshot_download('MAILAND/majicmixRealistic_v6', revision='v1.0.0', cache_dir=local_model_path)
         base_model_path_maj = os.path.join(base_model_path_maj, 'realistic')
         
-        base_model_path_film = snapshot_download('ly261666/cv_portrait_model', revision='v2.0')
+        base_model_path_film = snapshot_download('ly261666/cv_portrait_model', revision='v2.0', cache_dir=local_model_path)
         base_model_path_film = os.path.join(base_model_path_film, 'film/film')
         
         self.pipe_maj = StableDiffusionControlNetPipeline.from_pretrained(
@@ -380,7 +386,7 @@ class GenPortrait:
                  input_img_path=None, 
                  pose_image=None, 
                  multiplier_style=0):
-        
+
         self.use_face_swap = (use_face_swap > 0)
         st = time.time()
         if pose_image is not None:
@@ -457,7 +463,7 @@ class GenPortrait:
         
         if style_model_path is None:
             model_dir = snapshot_download(
-                'Cherrytest/zjz_mj_jiyi_small_addtxt_fromleo', revision='v1.0.0')
+                'Cherrytest/zjz_mj_jiyi_small_addtxt_fromleo', revision='v1.0.0', cache_dir=local_model_path)
             style_model_path = os.path.join(
                 model_dir, 'zjz_mj_jiyi_small_addtxt_fromleo.safetensors')
                 

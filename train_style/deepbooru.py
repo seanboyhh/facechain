@@ -712,13 +712,15 @@ def resize_image(im, width, height):
 
     return res
 
+# 设置模型下载和加载的本地目标路径
+local_model_path = "/mnt/g/data/models/.cache"
 
 class DeepDanbooru:
     def __init__(self):
         self.model = DeepDanbooruModel()
 
         foundation_model_id = 'ly261666/cv_portrait_model'
-        snapshot_path = snapshot_download(foundation_model_id, revision='v4.0')
+        snapshot_path = snapshot_download(foundation_model_id, revision='v4.0', cache_dir=local_model_path)
         pretrain_model_path = os.path.join(snapshot_path, 'model-resnet_custom_v3.pt')
 
         self.model.load_state_dict(torch.load(pretrain_model_path, map_location="cpu"))

@@ -6,6 +6,8 @@ import cv2
 from facechain.utils import snapshot_download
 from facechain.constants import neg_prompt, pos_prompt_with_cloth, pos_prompt_with_style, base_models
 
+from model_path import local_model_path
+
 def generate_pos_prompt(style_model, prompt_cloth):
     if style_model is not None:
         matched = list(filter(lambda style: style_model == style['name'], styles))
@@ -35,15 +37,15 @@ for base_model in base_models:
     base_model['style_list'] = style_in_base
 
 use_pose_model = False
-input_img_path = f'{os.getcwd()}/poses/woman/pose13.jpg'
+input_img_path = f'{os.getcwd()}/poses/woman/pose13.jpg' # 提供脸
 print(f'input_img_path==={input_img_path}')
-pose_image = f'{os.getcwd()}/poses/woman/pose10.jpg'
+pose_image = f'{os.getcwd()}/poses/woman/pose10.jpg' # 提供姿势
 print(f'目录==={pose_image}')
 num_generate = 3
 multiplier_style = 0.25
 output_dir = './generated'
 base_model_idx = 1
-style_idx = 46
+style_idx = 7
 
 base_model = base_models[base_model_idx]
 style = styles[style_idx]
@@ -56,7 +58,7 @@ else:
     if os.path.exists(model_id):
         model_dir = model_id
     else:
-        model_dir = snapshot_download(model_id, revision=style['revision'])
+        model_dir = snapshot_download(model_id, revision=style['revision'], cache_dir=local_model_path)
     style_model_path = os.path.join(model_dir, style['bin_file'])
     pos_prompt = generate_pos_prompt(style['name'], style['add_prompt_style'])  # style has its own prompt
 

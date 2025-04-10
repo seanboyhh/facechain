@@ -30,6 +30,7 @@ from modelscope.utils.constant import Tasks
 
 from face_adapter import FaceAdapter_v1, Face_Extracter_v1
 
+from model_path import local_model_path
 
 def concatenate_images(images):
     heights = [img.shape[0] for img in images]
@@ -42,7 +43,6 @@ def concatenate_images(images):
                            x_offset:x_offset + img.shape[1], :] = img
         x_offset += img.shape[1]
     return concatenated_image
-
 
 def call_face_crop(det_pipeline, image, crop_ratio):
     det_result = det_pipeline(image)
@@ -566,12 +566,11 @@ def post_process_fn(use_post_process, swap_results_ori, selected_face,
         #  TODO
         face_recognition_func = pipeline(
             Tasks.face_recognition,
-            'damo/cv_ir_face-recognition-ood_rts',
+            snapshot_download('damo/cv_ir_face-recognition-ood_rts', revision='v2.5', cache_dir=local_model_path),
             model_revision='v2.5')
         face_det_func = pipeline(
-            task=Tasks.face_detection,
-            model='damo/cv_ddsar_face-detection_iclr23-damofd',
-            model_revision='v1.1')
+            Tasks.face_detection,
+            snapshot_download('damo/cv_ddsar_face-detection_iclr23-damofd', revision='v1.1', cache_dir=local_model_path))
         swap_results = swap_results_ori
 
         select_face_emb = face_recognition_func(selected_face)[
@@ -618,24 +617,23 @@ def postprocess_inpaint_img(img2img_res, output_size=(768, 1024)):
                      + output_size[0], :]
     return Image.fromarray(croped)
 
-
 class GenPortrait_inpaint:
 
     def __init__(self):
         cfg_face = True
         
-        fact_model_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0')
+        fact_model_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0', cache_dir=local_model_path)
         adapter_path = os.path.join(fact_model_path, 'adapter_maj_mask_large_new_reg001_faceshuffle_00290001.ckpt')
 
         self.segmentation_pipeline = pipeline(
             Tasks.image_segmentation,
-            'damo/cv_resnet101_image-multiple-human-parsing',
+            snapshot_download('damo/cv_resnet101_image-multiple-human-parsing', revision='v1.0.1', cache_dir=local_model_path),
             model_revision='v1.0.1')
         self.image_face_fusion = pipeline('face_fusion_torch',
-                                     model='damo/cv_unet_face_fusion_torch', model_revision='v1.0.3')
+            snapshot_download('damo/cv_unet_face_fusion_torch', revision='v1.0.3', cache_dir=local_model_path), model_revision='v1.0.3')
 
         model_dir = snapshot_download(
-            'damo/face_chain_control_model', revision='v1.0.1')
+            'damo/face_chain_control_model', revision='v1.0.1', cache_dir=local_model_path)
         self.openpose = OpenposeDetector.from_pretrained(
             os.path.join(model_dir, 'model_controlnet/ControlNet')).to('cuda')
         self.depth_estimator = tpipeline(
@@ -644,16 +642,15 @@ class GenPortrait_inpaint:
 
         self.face_quality_func = pipeline(
             Tasks.face_quality_assessment,
-            'damo/cv_manual_face-quality-assessment_fqa',
+            snapshot_download('damo/cv_manual_face-quality-assessment_fqa', revision='v2.0', cache_dir=local_model_path),
             model_revision='v2.0')
         self.face_detection = pipeline(
-            task=Tasks.face_detection,
-            model='damo/cv_ddsar_face-detection_iclr23-damofd',
-            model_revision='v1.1')
+            Tasks.face_detection,
+            snapshot_download('damo/cv_ddsar_face-detection_iclr23-damofd', revision='v1.1', cache_dir=local_model_path))
 
         dtype = torch.float16
         model_dir1 = snapshot_download(
-            'ly261666/cv_wanx_style_model', revision='v1.0.3')
+            'ly261666/cv_wanx_style_model', revision='v1.0.3', cache_dir=local_model_path)
         self.controlnet = [
             ControlNetModel.from_pretrained(
                 os.path.join(model_dir,
@@ -664,23 +661,24 @@ class GenPortrait_inpaint:
         ]
 
         model_dir = snapshot_download(
-            'ly261666/cv_wanx_style_model', revision='v1.0.2')
+            'ly261666/cv_wanx_style_model', revision='v1.0.2', cache_dir=local_model_path)
 
         self.face_adapter_path = adapter_path
         self.cfg_face = cfg_face
         
-        fr_weight_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0')
+        fr_weight_path = snapshot_download('yucheng1996/FaceChain-FACT', revision='v1.0.0', cache_dir=local_model_path)
         fr_weight_path = os.path.join(fr_weight_path, 'ms1mv2_model_TransFace_S.pt')
         
         self.face_extracter = Face_Extracter_v1(fr_weight_path=fr_weight_path, fc_weight_path=self.face_adapter_path)
-        self.face_detection0 = pipeline(task=Tasks.face_detection, model='damo/cv_resnet50_face-detection_retinaface')
+        self.face_detection0 = pipeline(Tasks.face_detection,
+            snapshot_download('damo/cv_resnet50_face-detection_retinaface', cache_dir=local_model_path))
         self.skin_retouching = pipeline(
             'skin-retouching-torch',
-            model=snapshot_download('damo/cv_unet_skin_retouching_torch', revision='v1.0.1.1'))
+            snapshot_download('damo/cv_unet_skin_retouching_torch', revision='v1.0.1.1', cache_dir=local_model_path))
         self.fair_face_attribute_func = pipeline(Tasks.face_attribute_recognition,
-            snapshot_download('damo/cv_resnet34_face-attribute-recognition_fairface', revision='v2.0.2'))
+            snapshot_download('damo/cv_resnet34_face-attribute-recognition_fairface', revision='v2.0.2', cache_dir=local_model_path))
         
-        base_model_path = snapshot_download('MAILAND/majicmixRealistic_v6', revision='v1.0.0')
+        base_model_path = snapshot_download('MAILAND/majicmixRealistic_v6', revision='v1.0.0', cache_dir=local_model_path)
         base_model_path = os.path.join(base_model_path, 'realistic')
         
         pipe_pose = StableDiffusionControlNetPipeline.from_pretrained(
