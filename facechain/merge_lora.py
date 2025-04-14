@@ -11,7 +11,7 @@ def merge_lora(pipeline,
                lora_path,
                multiplier,
                from_safetensor=False,
-               device='cuda',
+               device='cpu', # 设备选择
                dtype=torch.float16):
     LORA_PREFIX_UNET = 'lora_unet'
     LORA_PREFIX_TEXT_ENCODER = 'lora_te'
@@ -95,7 +95,7 @@ def restore_lora(pipeline,
                lora_path,
                multiplier,
                from_safetensor=False,
-               device='cuda',
+               device='cpu', #设备选择
                dtype=torch.float16):
     LORA_PREFIX_UNET = 'lora_unet'
     LORA_PREFIX_TEXT_ENCODER = 'lora_te'

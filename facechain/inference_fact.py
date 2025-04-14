@@ -9,6 +9,8 @@ import numpy as np
 import torch
 from controlnet_aux import OpenposeDetector
 from diffusers import (ControlNetModel, PNDMScheduler, DDIMScheduler, AutoencoderKL, StableDiffusionControlNetPipeline, StableDiffusionPipeline)
+from torch.cuda import device
+
 from facechain.merge_lora import merge_lora, restore_lora
 
 from PIL import Image
@@ -242,10 +244,11 @@ def post_process_fn(use_post_process, swap_results_ori, selected_face,
         face_recognition_func = pipeline(
             Tasks.face_recognition,
             snapshot_download('damo/cv_ir_face-recognition-ood_rts', revision='v2.5', cache_dir=local_model_path),
-            model_revision='v2.5')
+            model_revision='v2.5', device='cpu')
         face_det_func = pipeline(
             Tasks.face_detection,
-            snapshot_download('damo/cv_ddsar_face-detection_iclr23-damofd', revision='v1.1', cache_dir=local_model_path))
+            snapshot_download('damo/cv_ddsar_face-detection_iclr23-damofd', revision='v1.1', cache_dir=local_model_path)
+            , device='cpu')
         swap_results = []
         for img in swap_results_ori:
             result_det = face_det_func(img)
@@ -292,21 +295,21 @@ class GenPortrait:
         self.segmentation_pipeline = pipeline(
             Tasks.image_segmentation,
             snapshot_download(model_id='damo/cv_resnet101_image-multiple-human-parsing', revision='v1.0.1', cache_dir=local_model_path),
-            model_revision='v1.0.1')
+            model_revision='v1.0.1', device='cpu')
 
         self.image_face_fusion = pipeline('face_fusion_torch',
                                      snapshot_download(model_id='damo/cv_unet_face_fusion_torch', revision='v1.0.3', cache_dir=local_model_path),
-                                    model_revision='v1.0.3')
+                                    model_revision='v1.0.3', device='cpu')
 
         model_dir = snapshot_download(
             'damo/face_chain_control_model', revision='v1.0.1', cache_dir=local_model_path)
         self.openpose = OpenposeDetector.from_pretrained(
-            os.path.join(model_dir, 'model_controlnet/ControlNet')).to('cuda')
+            os.path.join(model_dir, 'model_controlnet/ControlNet')).to('cpu')
 
         self.face_quality_func = pipeline(
             Tasks.face_quality_assessment,
             snapshot_download(model_id='damo/cv_manual_face-quality-assessment_fqa', revision='v2.0', cache_dir=local_model_path),
-            model_revision='v2.0')
+            device='cpu')
 
         model_dir = snapshot_download(
             'ly261666/cv_wanx_style_model', revision='v1.0.2', cache_dir=local_model_path)
@@ -324,15 +327,15 @@ class GenPortrait:
 
 
         self.face_detection = pipeline(Tasks.face_detection,
-            snapshot_download('damo/cv_resnet50_face-detection_retinaface', cache_dir=local_model_path))
+            snapshot_download('damo/cv_resnet50_face-detection_retinaface', cache_dir=local_model_path), device='cpu')
 
         self.skin_retouching = pipeline(
             'skin-retouching-torch',
             model=snapshot_download('damo/cv_unet_skin_retouching_torch', revision='v1.0.1', cache_dir=local_model_path),
-            model_revision='v1.0.1')
+            model_revision='v1.0.1', device='cpu')
         # print("执行到这里了*02")
         self.fair_face_attribute_func = pipeline(Tasks.face_attribute_recognition,
-            snapshot_download('damo/cv_resnet34_face-attribute-recognition_fairface', revision='v2.0.2', cache_dir=local_model_path))
+            snapshot_download('damo/cv_resnet34_face-attribute-recognition_fairface', revision='v2.0.2', cache_dir=local_model_path), device='cpu')
         
         base_model_path_maj = snapshot_download('MAILAND/majicmixRealistic_v6', revision='v1.0.0', cache_dir=local_model_path)
         base_model_path_maj = os.path.join(base_model_path_maj, 'realistic')
@@ -358,12 +361,12 @@ class GenPortrait:
         
         self.cfg_scale = 7.0
         
-        self.face_adapter_maj = FaceAdapter_v1(self.pipe_maj, self.face_detection, self.segmentation_pipeline, self.face_extracter_maj, self.face_adapter_path_maj, 'cuda', True)
+        self.face_adapter_maj = FaceAdapter_v1(self.pipe_maj, self.face_detection, self.segmentation_pipeline, self.face_extracter_maj, self.face_adapter_path_maj, 'cpu', True)
         self.face_adapter_maj.set_scale(0.5)
         self.face_adapter_maj.delayed_face_condition = 0.0
         self.face_adapter_maj.pipe.to('cpu')
         
-        self.face_adapter_film = FaceAdapter_v1(self.pipe_film, self.face_detection, self.segmentation_pipeline, self.face_extracter_film, self.face_adapter_path_film, 'cuda', True)
+        self.face_adapter_film = FaceAdapter_v1(self.pipe_film, self.face_detection, self.segmentation_pipeline, self.face_extracter_film, self.face_adapter_path_film, 'cpu', True)
         self.face_adapter_film.set_scale(0.5)
         self.face_adapter_film.delayed_face_condition = 0.0
         self.face_adapter_film.pipe.to('cpu')
@@ -468,13 +471,13 @@ class GenPortrait:
                 model_dir, 'zjz_mj_jiyi_small_addtxt_fromleo.safetensors')
                 
         # main_model_inference PIL
-        self.pipe.to('cuda')
+        self.pipe.to('cpu')
         
         self.pipe = merge_lora(
             self.pipe,
             style_model_path,
             multiplier_style,
-            device='cuda',
+            device='cpu',
             from_safetensor=True)
         
         gen_results, is_old = main_model_inference(
@@ -501,7 +504,7 @@ class GenPortrait:
             self.pipe,
             style_model_path,
             multiplier_style,
-            device='cuda',
+            device='cpu',
             from_safetensor=True)
         
         self.pipe.to('cpu')
