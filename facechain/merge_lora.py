@@ -78,6 +78,7 @@ def merge_lora(pipeline,
 
         curr_layer.weight.data = curr_layer.weight.data.to(device)
         if len(weight_up.shape) == 4:
+
             if not hasattr(curr_layer.weight, 'data_restore'):
                 curr_layer.weight.data_restore = curr_layer.weight.data.clone()
             curr_layer.weight.data += multiplier * alpha * torch.mm(
