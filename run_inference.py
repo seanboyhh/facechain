@@ -41,7 +41,7 @@ input_img_path = f'{os.getcwd()}/poses/woman/pose13.jpg' # 提供脸
 print(f'input_img_path==={input_img_path}')
 pose_image = f'{os.getcwd()}/poses/woman/pose10.jpg' # 提供姿势
 print(f'目录==={pose_image}')
-num_generate = 3
+num_generate = 10
 multiplier_style = 0.25
 output_dir = './generated'
 base_model_idx = 1
