@@ -6,7 +6,7 @@ from facechain.inference_inpaint_fact import GenPortrait_inpaint
 num_faces = 1
 selected_face = 1
 strength = 0.6
-inpaint_img = 'poses/woman/pose27.jpg' # 身体和背景
+inpaint_img = 'poses/woman/pose29.jpg' # 身体和背景
 input_img_path = 'poses/woman/pose13.jpg' # 脸
 num_generate = 1
 output_dir = './generated_inpaint'
